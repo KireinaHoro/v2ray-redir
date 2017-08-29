@@ -14,3 +14,7 @@ your `v2ray` configuration.
 ## Installation / Uninstallation
 
 See `install.sh` usage.
+
+## License
+
+This repository is licensed under the MIT license.
