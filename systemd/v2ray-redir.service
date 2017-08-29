@@ -1,0 +1,16 @@
+[Unit]
+Description=Configure routing for V2Ray
+After=network.target v2ray.service
+Requires=v2ray.service
+Wants=network.target
+
+[Service]
+Type=simple
+ExecStart=/opt/v2ray-redir/routing apply
+ExecReload=/usr/bin/systemctl restart v2ray.service
+ExecStop=/opt/v2ray-redir/routing clear
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+Also=v2ray.service

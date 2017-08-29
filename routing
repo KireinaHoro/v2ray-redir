@@ -1,0 +1,84 @@
+#!/bin/bash
+
+CONFIG="/etc/v2ray/config.json"
+
+die() {
+    echo "$@" 1>&2
+    exit 1
+}
+
+do_iptables() {
+    iptables $@ || die "failed: iptables $@"
+}
+
+readconf() {
+    jq -r "$1" ${CONFIG} || die "invalid ${CONFIG}"
+}
+
+clear_rules() {
+    if [[ $( do_iptables -t nat -n -L V2RAY 2>&1 >/dev/null ) ]] ; then
+        die "error: V2RAY chain in nat table not found; perhaps no rules have \
+been configured?"
+    fi
+
+    echo "Clearing rules"
+    do_iptables -t nat -D OUTPUT -p tcp -j V2RAY
+    do_iptables -t nat -F V2RAY
+    do_iptables -t nat -X V2RAY
+}
+
+apply_rules() {
+    if [[ ! $( do_iptables -t nat -n -L V2RAY 2>&1 >/dev/null ) ]] ; then
+        die "error: V2RAY chain in nat table found; perhaps the rules have \
+already been configured?"
+    fi
+
+    echo "Applying rules"
+    do_iptables -t nat -N V2RAY
+
+    # Bypass IP addresses
+    # Deprecated: you should configure in v2ray's routing settings
+    # Refer to v2ray manual for more information
+
+#    BYPASS=$(
+#        readconf ".outbound.settings.vnext[].address"
+#        readconf ".outboundDetour[]?.settings.servers[]?.address"
+#        echo 0.0.0.0/8 \
+#             10.0.0.0/8 \
+#             127.0.0.0/8 \
+#             169.254.0.0/16 \
+#             172.16.0.0/12 \
+#             192.168.0.0/16 \
+#             224.0.0.0/4 \
+#             240.0.0.0/4
+#    )
+#    
+#    for server in "${BYPASS}"; do
+#        if [[ ${server} =~ "127."* ]] ; then
+#            echo "Skipping local address ${server}"
+#        else
+#            do_iptables -t nat -A V2RAY -d ${server} -j RETURN
+#        fi
+#    done
+
+    # Bypass packets from v2ray freedom outbound (with group v2ray)
+    do_iptables -t nat -A V2RAY -m owner --gid v2ray -j RETURN
+
+    # Redirect to v2ray dokodemo-door port
+    LOCAL_PORT=$( readconf ".port" )
+
+    do_iptables -t nat -A V2RAY -p tcp -j REDIRECT --to-port $LOCAL_PORT
+    do_iptables -t nat -A OUTPUT -p tcp -j V2RAY
+}
+
+# MUST be run as root
+[[ $( id -u ) == 0 ]] || die "fatal: must be ran as root"
+
+if [[ "$1" == "apply" ]] ; then
+    apply_rules
+elif [[ "$1" == "clear" ]] ; then
+    clear_rules
+else
+    die "usage: ${0} < apply | clear >"
+fi
+
