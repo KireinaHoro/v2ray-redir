@@ -2,14 +2,14 @@
 
 Script and unit files for automatically configuring routing for v2ray with
 `iptables`. Determining which packets to proxy and which to send directly
-depend solemnly on `v2ray`, so make sure you configure routing properly in
+depends solemnly on `v2ray`, so make sure you configure routing properly in
 your `v2ray` configuration.
 
 ## Dependencies
 
  - V2Ray
- - jq (for parsing the json configuration file)
- - iptables (with "owner" matching module support)
+ - `jq` (for parsing the json configuration file)
+ - `iptables` (with "owner" matching module support)
 
 ## Installation / Uninstallation
 
