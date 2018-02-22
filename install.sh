@@ -5,7 +5,15 @@ die() {
     exit 1
 }
 
+test_command() {
+    command -v $1 >/dev/null 2>&1 || die "Command \"$1\" required but not found in PATH. Aborting."
+}
+
 install() {
+    # Test for required commands
+    test_command jq
+    test_command iptables
+
     # Check for iptables owner match support
     [[ ! $( iptables -m owner --help 2>&1 >/dev/null ) ]] || die "Your iptables \
 doesn't have \"owner\" match module support. For this solution to work \
