@@ -1,0 +1,40 @@
+#!/sbin/openrc-run
+# Copyright 1999-2018 Gentoo Foundation
+# Distributed under the terms of the GNU General Public License v2
+
+V2_CONFIG="/etc/v2ray/config.json"
+V2_PIDFILE="/run/v2ray.pid"
+V2_LOG="/var/log/v2ray.log"
+
+depend() {
+    need net
+}
+
+checkconfig() {
+    if [ ! -f ${V2_CONFIG} ]; then
+        ewarn "${V2_CONFIG} does not exist."
+    fi
+}
+
+start() {
+    checkconfig || return 1
+
+    ebegin "Starting V2ray auto redirection"
+    ebegin "Log File : ${V2_LOG}"
+    start-stop-daemon --start \
+    -b -1 ${V2_LOG} -2 ${V2_LOG} \
+    -m -p ${V2_PIDFILE} \
+    -g v2ray \
+    --exec /usr/bin/v2ray -- -config ${V2_CONFIG}
+    /usr/lib/v2ray-redir/routing apply || \
+        eerror "Failed to apply route"
+    eend $?
+}
+
+stop() {
+    ebegin "Stopping V2ray auto redirection"
+    /usr/lib/v2ray-redir/routing clear || \
+        eerror "Failed to clear route"
+    start-stop-daemon --stop -p ${V2_PIDFILE}
+    eend $?
+}
