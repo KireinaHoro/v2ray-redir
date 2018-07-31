@@ -25,7 +25,7 @@ start() {
     -b -1 ${V2_LOG} -2 ${V2_LOG} \
     -m -p ${V2_PIDFILE} \
     -g v2ray \
-    --exec /usr/bin/v2ray -- -config ${V2_CONFIG}
+    --exec /usr/bin/env -- v2ray.location.asset=/usr/share/v2ray /usr/bin/v2ray -config ${V2_CONFIG}
     /usr/lib/v2ray-redir/routing apply || \
         eerror "Failed to apply route"
     eend $?
