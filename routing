@@ -39,25 +39,21 @@ already been configured?"
     # Bypass local IP addresses
     # Not desirable to use v2ray outboundDetour as it would break local adb
 
-    BYPASS=$(
-        readconf ".outbound.settings.vnext[].address"
-        readconf ".outboundDetour[]?.settings.servers[]?.address"
-        echo 0.0.0.0/8 \
-             10.0.0.0/8 \
-             127.0.0.0/8 \
-             169.254.0.0/16 \
-             172.16.0.0/12 \
-             192.168.0.0/16 \
-             224.0.0.0/4 \
-             240.0.0.0/4
+    BYPASS=(
+    $(readconf ".outbound.settings.vnext[].address")
+    $(readconf ".outboundDetour[]?.settings.servers[]?.address")
+    0.0.0.0/8
+    10.0.0.0/8
+    127.0.0.0/8
+    169.254.0.0/16
+    172.16.0.0/12
+    192.168.0.0/16
+    224.0.0.0/4
+    240.0.0.0/4
     )
     
-    for server in "${BYPASS}"; do
-        if [[ ${server} =~ "127."* ]] ; then
-            echo "Skipping local address ${server}"
-        else
-            do_iptables -t nat -A V2RAY -d ${server} -j RETURN
-        fi
+    for server in "${BYPASS[@]}"; do
+        do_iptables -t nat -A V2RAY -d ${server} -j RETURN
     done
 
     # Bypass packets from v2ray freedom outbound (with group v2ray)
